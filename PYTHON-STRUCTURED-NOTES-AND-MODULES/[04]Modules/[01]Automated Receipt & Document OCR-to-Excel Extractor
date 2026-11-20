@@ -1,0 +1,99 @@
+"""
+====================================================================================
+INTEGRATED 3-MODULE PROJECT 1: RECEIPT & DOCUMENT OCR-TO-EXCEL EXTRACTOR
+====================================================================================
+HOW THE 3 MODULES WORK TOGETHER:
+  1. Pillow (PIL)   -> Loads the image, converts it to grayscale, and sharpens text.
+  2. pytesseract    -> Reads the cleaned image and extracts raw text strings (OCR).
+  3. openpyxl       -> Structures the extracted lines into a styled Excel (.xlsx) file.
+====================================================================================
+"""
+
+import os
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter   # Module 1: Image processing
+import pytesseract                                          # Module 2: OCR text extraction
+import openpyxl                                             # Module 3: Excel spreadsheet builder
+from openpyxl.styles import Font, PatternFill
+
+
+def create_sample_receipt(filename):
+    """Uses Pillow (PIL) to generate a test receipt image so the script runs immediately."""
+    img = Image.new("RGB", (520, 260), color=(255, 255, 255))
+    draw = ImageDraw.Draw(img)
+    receipt_text = (
+        "HOMETOWN CAFE - SANTA CRUZ\n"
+        "Order ID: HC-2026-1120\n"
+        "1x Caramel Macchiato - 145.00\n"
+        "1x Matcha Latte - 160.00\n"
+        "TOTAL AMOUNT: 305.00 PHP"
+    )
+    draw.text((25, 30), receipt_text, fill=(0, 0, 0))
+    img.save(filename)
+    print(f"[Module 1: Pillow] Generated sample receipt image: {filename}")
+
+
+def clean_image_for_ocr(image_path):
+    """
+    MODULE 1: Pillow (PIL)
+    Converts the image to grayscale ('L'), sharpens edges, and boosts contrast
+    so the OCR engine can read characters accurately.
+    """
+    img = Image.open(image_path)
+    gray = img.convert("L")
+    sharpened = gray.filter(ImageFilter.SHARPEN)
+    enhanced = ImageEnhance.Contrast(sharpened).enhance(1.8)
+    print("[Module 1: Pillow] Image preprocessed (Grayscale + Sharpen + High Contrast).")
+    return enhanced
+
+
+def extract_text(processed_image):
+    """
+    MODULE 2: pytesseract
+    Passes the preprocessed Pillow image into the Tesseract OCR engine
+    and returns the recognized text as a Python string.
+    """
+    raw_text = pytesseract.image_to_string(processed_image, config="--psm 6")
+    print("[Module 2: pytesseract] Optical Character Recognition complete.")
+    return raw_text
+
+
+def save_to_excel(extracted_text, excel_filename):
+    """
+    MODULE 3: openpyxl
+    Creates a new Excel workbook, styles the header row, writes each extracted
+    line into structured columns, and saves the .xlsx report.
+    """
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "OCR Receipt Data"
+
+    # Style and write headers
+    ws.append(["Line #", "Extracted Text", "Character Length"])
+    header_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True)
+
+    for col in range(1, 4):
+        ws.cell(row=1, column=col).fill = header_fill
+        ws.cell(row=1, column=col).font = header_font
+
+    # Write non-empty OCR lines
+    lines = [line.strip() for line in extracted_text.splitlines() if line.strip()]
+    for idx, line in enumerate(lines, start=1):
+        ws.append([idx, line, len(line)])
+
+    ws.column_dimensions["B"].width = 40
+    wb.save(excel_filename)
+    print(f"[Module 3: openpyxl] Saved structured report to: {excel_filename}")
+
+
+if __name__ == "__main__":
+    img_file = "receipt_sample.png"
+    xlsx_file = "extracted_receipt.xlsx"
+
+    if not os.path.exists(img_file):
+        create_sample_receipt(img_file)
+
+    cleaned = clean_image_for_ocr(img_file)
+    text_result = extract_text(cleaned)
+    print("\n--- EXTRACTED OCR TEXT ---\n" + text_result + "--------------------------\n")
+    save_to_excel(text_result, xlsx_file)

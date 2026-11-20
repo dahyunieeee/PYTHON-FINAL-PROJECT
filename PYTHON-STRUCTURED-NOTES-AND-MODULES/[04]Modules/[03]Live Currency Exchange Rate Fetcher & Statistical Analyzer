@@ -1,0 +1,71 @@
+"""
+====================================================================================
+INTEGRATED 3-MODULE PROJECT 3: LIVE API DATA FETCHER & STATISTICAL ANALYZER
+====================================================================================
+HOW THE 3 MODULES WORK TOGETHER:
+  1. urllib.request -> Connects to a live public REST API over HTTPS.
+  2. json           -> Parses the raw JSON response string into Python objects.
+  3. statistics     -> Computes mean, median, and standard deviation on numeric values.
+====================================================================================
+"""
+
+import urllib.request   # Module 1: Fetches live data from a web API URL
+import json             # Module 2: Decodes JSON text payloads into Python data
+import statistics       # Module 3: Performs statistical analysis on numerical series
+
+
+def fetch_exchange_rates(api_url):
+    """
+    MODULE 1: urllib.request
+    Sends an HTTP request to a public currency API and reads the raw byte response.
+    """
+    with urllib.request.urlopen(api_url, timeout=10) as response:
+        raw_bytes = response.read()
+        raw_text = raw_bytes.decode("utf-8")
+        print(f"[Module 1: urllib.request] Connected (HTTP Status: {response.status})")
+        return raw_text
+
+
+def parse_rates(json_text):
+    """
+    MODULE 2: json
+    Converts the raw JSON string into structured Python objects and extracts
+    key currency exchange rates relative to USD.
+    """
+    parsed_data = json.loads(json_text)
+    rates = parsed_data["rates"]
+    date_updated = parsed_data.get("time_last_update_utc", "Latest")
+    print(f"[Module 2: json] Parsed exchange rates updated on: {date_updated}")
+    return rates
+
+
+def analyze_currency_basket(rates):
+    """
+    MODULE 3: statistics
+    Selects a basket of major global currencies and computes statistical metrics
+    (mean, median, and standard deviation) across their exchange values.
+    """
+    selected_codes = ["EUR", "GBP", "CAD", "AUD", "CHF", "SGD"]
+    values = [rates[code] for code in selected_codes if code in rates]
+
+    avg_rate = statistics.mean(values)
+    med_rate = statistics.median(values)
+    std_dev = statistics.stdev(values)
+
+    print("\n--- CURRENCY BASKET (PER 1 USD) ---")
+    for code in selected_codes:
+        if code in rates:
+            print(f"  {code}: {rates[code]:.4f}")
+
+    print("\n[Module 3: statistics] Statistical Summary:")
+    print(f"  Mean Rate          : {avg_rate:.4f}")
+    print(f"  Median Rate        : {med_rate:.4f}")
+    print(f"  Standard Deviation : {std_dev:.4f}")
+
+
+if __name__ == "__main__":
+    # Free public exchange rate API (no API key required)
+    url = "https://open.er-api.com/v6/latest/USD"
+    raw_json = fetch_exchange_rates(url)
+    currency_rates = parse_rates(raw_json)
+    analyze_currency_basket(currency_rates)

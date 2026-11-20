@@ -1,0 +1,80 @@
+"""
+====================================================================================
+INTEGRATED 3-MODULE PROJECT 2: AUTOMATED FILE ORGANIZER & AUDIT LOGGER
+====================================================================================
+HOW THE 3 MODULES WORK TOGETHER:
+  1. os       -> Scans folders, checks file extensions, and creates target subfolders.
+  2. shutil   -> Moves files safely into categorized folders based on file type.
+  3. datetime -> Generates exact timestamps for every file movement in an audit log.
+====================================================================================
+"""
+
+import os                       # Module 1: Operating system path & directory operations
+import shutil                   # Module 2: High-level file moving & copying
+from datetime import datetime   # Module 3: Date and timestamp generation
+
+
+def setup_messy_folder(folder_path):
+    """Uses 'os' to create a test folder with sample files of different extensions."""
+    os.makedirs(folder_path, exist_ok=True)
+    sample_files = ["report.pdf", "banner.png", "notes.txt", "budget.csv", "script.py"]
+    for filename in sample_files:
+        full_path = os.path.join(folder_path, filename)
+        if not os.path.exists(full_path):
+            with open(full_path, "w") as f:
+                f.write("Sample content for testing file organization.")
+    print(f"[Module 1: os] Test workspace ready at: {folder_path}")
+
+
+def organize_and_log(folder_path):
+    """
+    Combines 'os', 'shutil', and 'datetime' to sort files by extension
+    and record every action with a timestamp.
+    """
+    log_file = os.path.join(folder_path, "audit_log.txt")
+
+    # Map file extensions to destination folder names
+    category_map = {
+        ".pdf": "Documents",
+        ".txt": "Documents",
+        ".png": "Images",
+        ".jpg": "Images",
+        ".csv": "Spreadsheets",
+        ".py": "Code_Files"
+    }
+
+    # Module 1 (os): List all items inside the target directory
+    for item in os.listdir(folder_path):
+        source_path = os.path.join(folder_path, item)
+
+        # Skip directories and the log file itself
+        if os.path.isdir(source_path) or item == "audit_log.txt":
+            continue
+
+        # Module 1 (os): Split filename and extension (e.g., 'banner', '.png')
+        _, ext = os.path.splitext(item)
+        target_category = category_map.get(ext.lower(), "Others")
+
+        # Module 1 (os): Create destination category subfolder if it doesn't exist
+        dest_folder = os.path.join(folder_path, target_category)
+        os.makedirs(dest_folder, exist_ok=True)
+
+        # Module 2 (shutil): Move the file into its categorized subfolder
+        dest_path = os.path.join(dest_folder, item)
+        shutil.move(source_path, dest_path)
+
+        # Module 3 (datetime): Generate formatted timestamp for the audit record
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_entry = f"[{timestamp}] Moved '{item}' -> '{target_category}/'"
+
+        print(f"[Module 2: shutil + Module 3: datetime] {log_entry}")
+        with open(log_file, "a") as log:
+            log.write(log_entry + "\n")
+
+
+if __name__ == "__main__":
+    workspace = "Sample_Messy_Folder"
+    setup_messy_folder(workspace)
+    print("\n--- STARTING AUTOMATED ORGANIZATION ---")
+    organize_and_log(workspace)
+    print("--- ORGANIZATION COMPLETE (Check audit_log.txt) ---")

@@ -1,0 +1,5 @@
+[2026-11-20 15:49:43] Moved 'banner.png' -> 'Images/'
+[2026-11-20 15:49:43] Moved 'budget.csv' -> 'Spreadsheets/'
+[2026-11-20 15:49:43] Moved 'notes.txt' -> 'Documents/'
+[2026-11-20 15:49:43] Moved 'report.pdf' -> 'Documents/'
+[2026-11-20 15:49:43] Moved 'script.py' -> 'Code_Files/'
